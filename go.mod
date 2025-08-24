@@ -1,3 +1,4 @@
+// Package mypackage - MIT License - Copyright (c) 2025 Vorobyev Arseniy
 module github.com/go-teta/teta
 
 go 1.25.0
