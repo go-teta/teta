@@ -1,7 +1,7 @@
 package teta
 
 import (
-	json "encoding/json/v2"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -113,7 +113,7 @@ func (b *defaultBinder) bindBody(r *http.Request, dest any) error {
 
 	switch {
 	case strings.Contains(contentType, "application/json"):
-		if err := json.UnmarshalRead(r.Body, &dest); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&dest); err != nil {
 			return fmt.Errorf("json decode failed: %w", err)
 		}
 

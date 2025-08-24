@@ -18,7 +18,7 @@ type RouterGroup struct {
 }
 
 type HandlerFunc func(c *Context) error
-type Middleware func(HandlerFunc) HandlerFunc
+type Middleware func(next HandlerFunc) HandlerFunc
 
 func newRouteGroup(v Validator, her HTTPErrorHandler) *RouterGroup {
 	return &RouterGroup{
@@ -31,20 +31,18 @@ func newRouteGroup(v Validator, her HTTPErrorHandler) *RouterGroup {
 	}
 }
 
-func (rg *RouterGroup) adapt(handler HandlerFunc) http.Handler {
-	compiled := rg.compileMiddlewares(handler)
-
+func (rg *RouterGroup) next(handler HandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := NewContext(w, r, rg.validator)
 		defer ctx.Release()
 
-		if err := compiled(ctx); err != nil {
+		if err := rg.applyMiddleware(handler)(ctx); err != nil {
 			rg.httpErrorHandler(err, ctx)
 		}
 	})
 }
 
-func (rg *RouterGroup) compileMiddlewares(handler HandlerFunc) HandlerFunc {
+func (rg *RouterGroup) applyMiddleware(handler HandlerFunc) HandlerFunc {
 	if len(rg.middlewares) == 0 {
 		return handler
 	}
@@ -103,7 +101,7 @@ func (rg *RouterGroup) Handle(pattern string, handler HandlerFunc) {
 	method, pathPattern := parsePattern(pattern)
 	fullPath := path.Join(method, rg.prefix, pathPattern)
 
-	rg.handler.Handle(fullPath, rg.adapt(handler))
+	rg.handler.Handle(fullPath, rg.next(handler))
 }
 
 func parsePattern(pattern string) (method, path string) {

@@ -2,7 +2,7 @@ package teta
 
 import (
 	"context"
-	"encoding/json/v2"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"sync"
@@ -50,24 +50,26 @@ func (c *Context) Validate(s any) error {
 	return c.Validator.StructCtx(c.Request.Context(), s)
 }
 
+func (c *Context) writeContentType(value string) {
+	header := c.Writer.Header()
+	if header.Get(HeaderContentType) == "" {
+		header.Set(HeaderContentType, value)
+	}
+}
+
 func (c *Context) String(status int, str string) error {
-	c.Writer.Header().Add("Content-type", "application/json")
+	c.writeContentType(MIMETextPlainCharsetUTF8)
 	c.Writer.WriteHeader(status)
 
 	_, err := c.Writer.Write([]byte(str))
-
 	return err
 }
 
 func (c *Context) JSON(status int, v any) error {
-	c.Writer.Header().Add("Content-type", "application/json")
+	c.writeContentType(MIMEApplicationJSON)
 	c.Writer.WriteHeader(status)
 
-	return json.MarshalWrite(c.Writer, &v)
-}
-
-func (c *Context) SendStatus(status int) {
-	c.Writer.WriteHeader(status)
+	return json.NewEncoder(c.Writer).Encode(&v)
 }
 
 type ContextKey struct{ key string }
