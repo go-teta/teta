@@ -12,6 +12,8 @@ go get -u github.com/teta-chi/teta
 ### Simple
 
 ```go
+package main
+
 import (
 	"log"
 	"net/http"
